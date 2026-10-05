@@ -1,5 +1,6 @@
 (() => {
       "use strict";
+      // This browser app uses a public publishable key; Supabase RLS policies control database access.
       const STORAGE_KEY = "dpr-complete-v1";
       const SUPABASE_URL = "https://ootxvupcrxddkdixvupf.supabase.co";
       const SUPABASE_ANON_KEY = "sb_publishable_MIBBi3NA24PscC51W6fTlQ_NI1yplw5";
@@ -55,6 +56,7 @@
         if(error){console.error("Could not save template to Supabase.",error);throw new Error(error.message || "Could not save template.");}
         return data;
       }
+      // Fetch cloud templates newest-first and migrate older local-only templates once when needed.
       async function loadTemplates() {
         try {
           const activeName=state.templates.find(template=>template.id===state.activeTemplateId)?.name;
@@ -79,6 +81,7 @@
           return [];
         }
       }
+      // Updates and deletes need matching Supabase UPDATE and DELETE RLS policies.
       async function updateSupabaseTemplate(id,title,content) {
         const {data,error}=await supabaseClient.from("templates").update({title,content}).eq("id",id).select().single();
         if(error){console.error("Could not update template in Supabase.",error);throw new Error(error.message || "Could not update template.");}
@@ -88,6 +91,7 @@
         const {error}=await supabaseClient.from("templates").delete().eq("id",id);
         if(error){console.error("Could not delete template from Supabase.",error);throw new Error(error.message || "Could not delete template.");}
       }
+      // Daily reports and working configuration are restored from this browser; templates load from Supabase.
       function readState() {
         try {
           const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
@@ -101,6 +105,7 @@
       let report = normalizedReport(state.reports[activeDate]);
       const dialog = $("#manager-dialog");
 
+      // Save report edits locally so each field change does not require a network request.
       function persist(message="Saved locally") {
         state.reports[activeDate] = report;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); $("#save-label").textContent = message; }
@@ -293,6 +298,7 @@
       function csvValue(value) { return `"${String(value ?? "").replaceAll('"','""')}"`; }
       function excelColumn(index) { let name="";for(index++;index;index=Math.floor((index-1)/26))name=String.fromCharCode(65+(index-1)%26)+name;return name; }
       function xmlEscape(value) { return String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&apos;"); }
+      // Package the generated XML parts into an uncompressed ZIP file for Excel export.
       function zipStored(files) {
         const encoder=new TextEncoder();const crcTable=Uint32Array.from({length:256},(_,index)=>{let value=index;for(let bit=0;bit<8;bit++)value=value&1?0xedb88320^(value>>>1):value>>>1;return value>>>0;});
         const checksum=bytes=>{let value=0xffffffff;for(const byte of bytes)value=crcTable[(value^byte)&255]^(value>>>8);return(value^0xffffffff)>>>0;};
@@ -334,6 +340,7 @@
         ];
         download(filename("xlsx"),zipStored(files),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       }
+      // Import supports CSV directly and reads XLSX files through their ZIP/XML parts without extra libraries.
       function parseCsv(source) {
         const input=String(source).replace(/^\uFEFF/,"");const rows=[];let row=[];let field="";let quoted=false;
         for(let index=0;index<input.length;index++){
@@ -443,6 +450,7 @@
         state.reports[activeDate]=report;activeDate=nextDate;report=normalizedReport(state.reports[activeDate]);renderHeader();renderWorkLog();persist();
       }
 
+      // Wire controls after defining rendering and persistence functions.
       $("#report-date").addEventListener("change",event=>changeDate(event.target.value));
         $("#header-template").addEventListener("change",()=>{const id=$("#header-template").value;if(!id){state.activeTemplateId="";persist("No template selected");return;}$("#template-select").value=id;loadSelectedTemplate();if(state.activeTemplateId!==id)renderHeaderTemplatePicker();});
       $("#project-select").addEventListener("change",event=>{report.project=event.target.value;persist();});
