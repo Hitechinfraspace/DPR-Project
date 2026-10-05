@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5f4">
+  <title>Daily Progress Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  
+    
+  
+  
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><div class="brand-mark" aria-hidden="true">DP</div><div><p class="brand-title">Fieldwork / Reports</p><div class="brand-caption">Daily execution record</div></div></div>
+      <nav class="top-actions no-print" aria-label="Report actions">
+        <div class="header-template-picker"><label class="sr-only" for="header-template">Select report template</label><select id="header-template" aria-label="Select report template"><option value="">Choose template</option></select></div>
+        <button class="button" id="manage-button" type="button">Manage templates</button>
+        <button class="button" id="import-excel-button" type="button">Import Excel</button>
+        <input class="sr-only" id="import-excel-file" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/vnd.ms-excel" aria-label="Choose an Excel workbook or CSV file">
+        <button class="button" id="export-excel-button" type="button">Export Excel</button>
+        <button class="button button-primary" id="print-button" type="button">Save as PDF</button>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="page-heading"><div><p class="eyebrow">Site execution · Daily record</p><h1>Daily Progress Report</h1><p class="date-line" id="date-summary"></p></div><div class="save-state" role="status" aria-live="polite"><span class="save-dot" aria-hidden="true"></span><span id="save-label">Saved locally</span></div></div>
+
+    <section class="panel" aria-labelledby="header-title">
+      <div class="panel-heading"><h2 id="header-title"><span class="section-index">01</span>Report header</h2><button class="button button-quiet button-danger no-print" id="clear-day" type="button">Clear this day</button></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="field"><label id="label-project" for="project-select">Project</label><select id="project-select" data-report="project"></select></div>
+          <div class="field"><label id="label-date" for="report-date">Report date</label><input id="report-date" type="date" data-report="date"></div>
+          <div class="field"><label id="label-weather" for="weather-select">Weather</label><select id="weather-select" data-report="weather"></select></div>
+          <div class="field"><label id="label-shift" for="shift-select">Shift</label><select id="shift-select" data-report="shift"></select></div>
+        </div>
+        <div class="stats" aria-label="Daily totals">
+          <div class="stat"><span class="stat-label">Work log rows</span><strong class="stat-value" id="stat-rows">0</strong></div>
+          <div class="stat"><span class="stat-label">Total pipes laid</span><strong class="stat-value" id="stat-pipes">0</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="log-title">
+      <div class="panel-heading"><h2 id="log-title"><span class="section-index">02</span>Daily work log</h2><button class="button button-primary no-print" id="add-row" type="button"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Add work item</button></div>
+      <div class="table-wrap"><table aria-label="Pipe and fitting installation work log"><thead><tr id="work-head"></tr></thead><tbody id="work-rows"></tbody></table></div>
+      <div class="table-footer"><span class="helper">Record completed work for this day.</span><div class="totals"><span>Pipes: <strong id="total-pipes">0</strong></span></div></div>
+    </section>
+
+    <section class="panel" aria-labelledby="sign-title"><div class="panel-heading"><h2 id="sign-title"><span class="section-index">03</span>Submission &amp; approval</h2></div><div class="panel-body"><div class="sign-grid">
+      <div class="field"><label for="submitted-by">Submitted by</label><input id="submitted-by" data-report="submittedBy" placeholder="Name"></div>
+      <div class="field"><label for="designation">Designation</label><input id="designation" data-report="designation" placeholder="Role / designation"></div>
+      <div class="field"><label for="signature">Digital signature / approval</label><input class="signature-input" id="signature" data-report="signature" placeholder="Type name to sign"></div>
+    </div></div></section>
+    <p class="footer-note">Templates and daily reports are saved in this browser. Use JSON backup to move them to another device.</p>
+  </main>
+
+  <dialog id="manager-dialog" aria-labelledby="manager-title">
+    <div class="dialog-head"><h2 id="manager-title">Template &amp; dropdown management</h2><button class="button no-print" id="close-manager" type="button">Close</button></div>
+    <div class="dialog-body">
+      <section class="manager-section"><h3>Saved templates</h3><div class="template-grid"><div class="field"><label for="template-select">Template library</label><select id="template-select"></select></div><div class="field"><label for="template-name">Template name</label><input id="template-name" maxlength="80" placeholder="e.g. Urban mainline standard"></div></div><div class="manager-actions template-actions"><button class="button" id="load-template" type="button">Load selected</button><button class="button" id="update-template" type="button">Update selected</button><button class="button button-danger" id="delete-template" type="button">Delete selected</button><button class="button button-primary" id="save-template-new" type="button">Save as new template</button></div><p class="helper">Templates save reusable lists and columns. Daily reports stay separate.</p></section>
+      <section class="manager-section"><h3>Reusable dropdown lists</h3><div class="list-grid">
+        <div class="field"><label for="cfg-projects">Projects</label><textarea id="cfg-projects" data-list="projects" placeholder="Project A&#10;Project B"></textarea></div>
+        <div class="field"><label for="cfg-contractors">Sub-contractors</label><textarea id="cfg-contractors" data-list="contractors"></textarea></div>
+        <!-- <div class="field"><label for="cfg-weather">Weather conditions</label><textarea id="cfg-weather" data-list="weather"></textarea></div>
+        <div class="field"><label for="cfg-shifts">Shifts</label><textarea id="cfg-shifts" data-list="shifts"></textarea></div> -->
+      </div><p class="helper">Enter one option per line. Add multiple projects on separate lines. Lists are saved with the template.</p></section>
+      <section class="manager-section"><h3>Work-log column headings</h3><div id="label-config" class="manager-label-grid"></div><p class="helper">Edit visible headings to match your reporting format.</p></section>
+      <section class="manager-section"><h3>Work-log columns</h3><div id="column-config" class="column-config-list"></div><div class="column-restore"><label class="field-label" for="restore-column">Add a column back to this template</label><select id="restore-column"></select><button class="button no-print" id="restore-column-button" type="button">Add column</button></div><p class="helper">Toggle a column to show or hide it, remove it from this template, or use the arrows to change its order.</p></section>
+      <section class="manager-section"><h3>Custom work-log fields</h3><div id="custom-config"></div><button class="button no-print" id="add-custom-field" type="button">Add custom column</button></section>
+      <div class="manager-actions"><span class="helper">Apply configuration changes before saving or updating a named template.</span><div class="manager-buttons"><button class="button" id="load-demo" type="button">Load demo template</button><button class="button button-primary" id="save-config" type="button">Apply changes</button></div></div>
+    </div>
+  </dialog>
+
+    <script src="assets/js/app.js" defer></script>
+</body>
+</html>
